@@ -1,5 +1,3 @@
-__author__ = 'Anton Firsov'
-
 from random import *
 
 ''' Создание карты уровня. Карта уровня содержит:

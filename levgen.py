@@ -1,23 +1,10 @@
+__author__ = 'Anton Firsov'
+
 from random import *
 
 ''' Создание карты уровня. Карта уровня содержит:
 1. список точек/позиций карты
-2. список комнат
-
-Алгоритм создания карты:
-1. заполнить карту стенами
-2. создать первую комнату
-3. выбрать тип комнаты: комната/коридор
-4. задать произвольные размеры в некоторых пределах
-5. выбрать случайную точку
-6. поместить комнату
-7. пометить все граничные клетки
-8. выбрать случайную граничую клетку
-9. пункт 3. пункт 4.
-10. проверить, помещается ли комната так, чтобы присоединиться к выбранной граничной клетке (чо?)
-11. если да - пункт 6. если нет - пункт 8.
-12. повторять с пункта 7 n раз.
-13. вы великолепны! (на самом деле нет)'''
+2. список комнат'''
 
 
 class MyMap:
@@ -25,6 +12,7 @@ class MyMap:
         self.MapArr = []  # массив карты
         self.RoomList = []  # список существу.щих комнат
         self.RoomTypeList = ['corridor', 'room']  # доступные типы комнат
+        self.RoomSize = 0
 
     def makeMap(self, w, h):
         '''
@@ -47,6 +35,27 @@ class MyMap:
         if len(self.RoomList) == 0:  # п.2 если комната первая
             room_w, room_h = self.makeRoom(rType='room')
             self.placeRoom(room_w, room_h, 0, 0)  # ???
+
+        errCount = 0
+
+        '''while True:
+            room_w, room_h = self.makeRoom(rType='room')
+            if self.placeRoom(room_w, room_h, 0, 0) == False:
+                errCount = errCount + 1
+            if errCount > 15:
+                break'''
+
+        while len(self.RoomList) < 10:
+            room_w, room_h = self.makeRoom(rType='room')
+            self.placeRoom(room_w, room_h, 0, 0)
+
+        '''while self.RoomSize < (self.mapWidth*self.mapHeight)*0.7:
+            room_w, room_h = self.makeRoom(rType='room')
+            self.placeRoom(room_w, room_h, 0, 0)
+            self.RoomSize  = 0
+            for i in range(len(self.RoomList)):
+                self.RoomSize = self.RoomSize + self.RoomList[i][2]*self.RoomList[i][3]'''
+
 
 
 
@@ -76,24 +85,31 @@ class MyMap:
 
         return w, h
 
-    def checkSpace(self):
-        pass
-
-
-    def placeRoom(self, w, h, x_coord, y_coord):  # ???
-
-        if x_coord == 0:
-            x_coord = randrange(1,self.mapWidth-2-w)  # это не работает
-        if y_coord == 0:
-            y_coord = randrange(1,self.mapHeight-2-h)
+    def __checkSpace(self, w, h, x_coord, y_coord):
 
         for k in range(w):
             for l in range(h):
                 if self.MapArr[y_coord+l][x_coord+k] == 1:
                     return False
-                else:
+        return True
+
+
+    def placeRoom(self, w, h, x_coord, y_coord):
+
+        if x_coord == 0:
+            x_coord = randrange(1,self.mapWidth-2-w)
+        if y_coord == 0:
+            y_coord = randrange(1,self.mapHeight-2-h)
+
+        if self.__checkSpace(w, h, x_coord, y_coord) == True:
+            for k in range(w):
+                for l in range(h):
                     self.MapArr[y_coord+l][x_coord+k] = 1
-                    # return True
+        else:
+            return False
+
+        self.RoomList.append([x_coord, y_coord, w, h])
+        return True
 
 
 
@@ -101,8 +117,8 @@ class MyMap:
 
 ''' задаем ширину и высоту карты '''
 
-start_x = 30
-start_y = 20
+start_x = 50
+start_y = 30
 
 ''' создаем экземпляр карты нужной ширины и высоты '''
 

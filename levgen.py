@@ -1,115 +1,123 @@
 __author__ = 'Anton Firsov'
 
-from random import *
-
-''' Создание карты уровня. Карта уровня содержит:
-1. список точек/позиций карты
-2. список комнат'''
+from random import randrange, choice, randint
+import locations
 
 
 class MyMap:
-    def __init__(self):
+    def __init__(self, level):
         '''
-        Конструктор класса
+        Constructor
         '''
 
-        self.MapArr = []  # массив карты
-        self.RoomList = []  # список существующих комнат
-        self.RoomTypeList = ['corridor', 'room']  # доступные типы комнат
-        self.Walls = []  # список доступных стен
-        self.RoomSize = 0  # что это вообще?
+        self.map_arr = []  # list of the map
+        self.room_list = []  # list of existing rooms
+        self.map_level = level  # level the map belongs to
 
-    def makeMap(self, w, h):
+        self.__room_type_list = ['corridor', 'room']  # available types of rooms
+        self.Walls = []
+        self.__room_size = 0
+
+    def make_map(self, w, h):
         '''
-        создает карту, основной метод класса
-        :param w: ширина карты, кол-во клеток по х
-        :param h: высота карты, кол-во ячеек по у
+        creates the map, main methods of class
+        :param w: map width, number of tiles by х
+        :param h: map height, number of tiles by у
         :return:
         '''
 
-        self.MapArr = []  # зачем снова, если конструктор уже так делает?
+        self.map_arr = []  # зачем снова, если конструктор уже так делает?
 
-        self.mapWidth = w
-        self.mapHeight = h
+        self.__map_width = w
+        self.__map_height = h
 
-        for y in range(h):  # заполняем карту пустотой
-            self.MapArr.append([])
+        for y in range(h):  # fill the map with walls
+            self.map_arr.append([])
             for x in range(w):
-                self.MapArr[y].append(2)
+                self.map_arr[y].append(2)
 
-        if len(self.RoomList) == 0:  # если список комнат пуст, надо создать первую
-            room_w, room_h = self.makeRoom(rType='room')  # создаем комнату типа "комната", получаем ее размеры
-            self.placeRoom(room_w, room_h, 0, 0)  # помещаем комнату с заданными размерами
+        if len(self.room_list) == 0:  # if there is no rooms, time to add first one
+            if self.map_level == 0:  # if level is 0, time to add entrance hall
+                room_space = locations.entranceHall()  # import location
+                self.place_room(room_space, 5, 1)  # place location
+            else:
+                room_space = self.make_room(rType='room')
+                self.place_room(room_space, 0, 0)
 
-        errCount = 0
+        err_count = 0
 
         '''while True:
-            room_w, room_h = self.makeRoom(rType='room')
-            if self.placeRoom(room_w, room_h, 0, 0) == False:
-                errCount = errCount + 1
-            if errCount > 15:
+            room_w, room_h = self.make_room(rType='room')
+            if self.place_room(room_w, room_h, 0, 0) == False:
+                err_count = err_count + 1
+            if err_count > 15:
                 break'''
 
-        # while len(self.RoomList) < 6:
-        # while self.RoomSize < (self.mapWidth*self.mapHeight)*0.7:
-        while True:
-            room_w, room_h = self.makeRoom()
-            room_y, room_x, direct = self.pickWall()
-            intrsc_x = room_x
+        # while len(self.room_list) < 6:
+        # while self.__room_size < (self.__map_width*self.__map_height)*0.7:
+        while True:  # make and place rooms
+            room_space = self.make_room()
+            room_y, room_x, direct = self.__pick_wall()
+            intrsc_x = room_x  # coords of tile that connects two rooms
             intrsc_y = room_y
-            if direct == 'bot':
-                room_y -= room_h
+            if direct == 'bot':  # now this thing is horrible
+                room_y -= len(room_space)
             elif direct == 'top':
                 room_y += 1
             elif direct == 'rig':
                 room_x += 1
             elif direct == 'lef':
-                room_x -= room_w
-            # print(room_x,room_y)
-            if self.placeRoom(room_w, room_h, room_x, room_y) == True:
-                self.MapArr[intrsc_y][intrsc_x] = 1
+                room_x -= len(room_space[0])
+            if self.place_room(room_space, room_x, room_y) == True:
+                self.map_arr[intrsc_y][intrsc_x] = 1
             else:
-                errCount = errCount + 1
-            if errCount > 15:
+                err_count = err_count + 1  # if it is impossible to place room, that is an error
+            if err_count > 15:  # if 15 errors were made, in can not place rooms anymore
                 break
-            # for i in range(len(self.RoomList)):
-                # self.RoomSize = self.RoomSize + self.RoomList[i][2]*self.RoomList[i][3]
+            # for i in range(len(self.room_list)):
+                # self.__room_size = self.__room_size + self.room_list[i][2]*self.room_list[i][3]
 
-        '''while self.RoomSize < (self.mapWidth*self.mapHeight)*0.7:
-            room_w, room_h = self.makeRoom(rType='room')
-            self.placeRoom(room_w, room_h, 0, 0)
-            self.RoomSize  = 0
-            for i in range(len(self.RoomList)):
-                self.RoomSize = self.RoomSize + self.RoomList[i][2]*self.RoomList[i][3]'''
+        '''while self.__room_size < (self.__map_width*self.__map_height)*0.7:
+            room_w, room_h = self.make_room(rType='room')
+            self.place_room(room_w, room_h, 0, 0)
+            self.__room_size  = 0
+            for i in range(len(self.room_list)):
+                self.__room_size = self.__room_size + self.room_list[i][2]*self.room_list[i][3]'''
 
-    def pickWall(self):
+    def __pick_wall(self):
+        '''
+        picks a random wall attached to existing room
+        :return: coords of tile, direction where new room should be placed
+        '''
         while True:
-            x_wall = randrange(1, self.mapWidth-2)
-            y_wall = randrange(1, self.mapHeight-2)
-            if self.MapArr[y_wall][x_wall] == 2:
-                if self.MapArr[y_wall-1][x_wall] == 1:
+            x_wall = randrange(1, self.__map_width-2)
+            y_wall = randrange(1, self.__map_height-2)
+            if self.map_arr[y_wall][x_wall] == 2:
+                if self.map_arr[y_wall-1][x_wall] == 1:
                     direct = 'top'
                     break
-                elif self.MapArr[y_wall+1][x_wall] == 1:
+                elif self.map_arr[y_wall+1][x_wall] == 1:
                     direct = 'bot'
                     break
-                elif self.MapArr[y_wall][x_wall-1] == 1:
+                elif self.map_arr[y_wall][x_wall-1] == 1:
                     direct = 'rig'
                     break
-                elif self.MapArr[y_wall][x_wall+1] == 1:
+                elif self.map_arr[y_wall][x_wall+1] == 1:
                     direct = 'lef'
                     break
         return y_wall, x_wall, direct
 
-    def makeRoom(self, rType=None):
+    def make_room(self, rType=None):
         '''
-        Задает размеры будущей комнаты
-        :param rType: тип комнаты (None если задать произвольно)
-        :return: размеры комнаты
+        makes new room
+        :param rType: room type (None if choose randomly)
+        :return: list of tile codes
         '''
 
+        space = []
+
         if rType is None:
-            rType = choice(self.RoomTypeList)
+            rType = choice(self.__room_type_list)
 
         if rType == 'room':
             w = randrange(2,11)
@@ -122,66 +130,72 @@ class MyMap:
                 w = randrange(5,11)
                 h = 1
 
-        return w, h
+        for k in range(h):
+            space.append([])
+            for l in range(w):
+                space[k].append(1)
 
-    def checkSpace(self, w, h, x_coord, y_coord):
+        return space
+
+    def __check_space(self, w, h, x_coord, y_coord):
+        '''
+        checks if space for the new room is free
+        '''
 
         if x_coord < 1 or y_coord < 1:
             return False
-        if x_coord + w > self.mapWidth - 2 or y_coord + h > self.mapHeight - 2:
+        if x_coord + w > self.__map_width - 2 or y_coord + h > self.__map_height - 2:
             return False
 
-        for k in range(w):
-            for l in range(h):
-                if self.MapArr[y_coord+l][x_coord+k] == 1:
+        for k in range(h):
+            for l in range(w):
+                if self.map_arr[y_coord+k][x_coord+l] == 1:
                     return False
         return True
 
-    def placeRoom(self, w, h, x_coord, y_coord):
+    def place_room(self, space, x_coord, y_coord):
         '''
-        помещает комнату на карту
-        :param w: длина комнаты
-        :param h: ширина комнаты
-        :param x_coord: координата (0 если задать случайно)
-        :param y_coord: координата (0 если задать случайно)
-        :return:
+        places room on the map
         '''
 
         if x_coord == 0:
-            x_coord = randrange(1,self.mapWidth-2-w)
+            x_coord = randrange(1,self.__map_width-2-len(space[0]))
         if y_coord == 0:
-            y_coord = randrange(1,self.mapHeight-2-h)
+            y_coord = randrange(1,self.__map_height-2-len(space))
 
-        if self.checkSpace(w, h, x_coord, y_coord) == True:
-            for k in range(w):
-                for l in range(h):
-                    self.MapArr[y_coord+l][x_coord+k] = 1
+        if self.__check_space(len(space[0]), len(space), x_coord, y_coord) == True:  # исправить!
+            space = list(reversed(space))
+            for k in range(len(space)):
+                for l in range(len(space[k])):
+                    self.map_arr[y_coord+k][x_coord+l] = space[k][l]
         else:
             return False
 
-        self.RoomList.append([x_coord, y_coord, w, h])
+        self.room_list.append([x_coord, y_coord, len(space[0]), len(space)])
         return True
 
 
-''' задаем ширину и высоту карты '''
+''' map dimensions '''
 
 start_x = 50
 start_y = 30
 
-''' создаем экземпляр карты нужной ширины и высоты '''
+''' create map  '''
 
-themap = MyMap()
-themap.makeMap(start_x, start_y)
+themap = MyMap(0)  # making map of the first level
+themap.make_map(start_x, start_y)
 
-''' выводим карту '''
+''' prints the map '''
 
-for y in range(start_y - 1, -1, -1):
+for y in range(len(themap.map_arr)-1, -1, -1):
     line = ""
-    for x in range(start_x):
-        if themap.MapArr[y][x] == 0:
+    for x in range(len(themap.map_arr[y])):
+        if themap.map_arr[y][x] == 0:
             line += " "
-        if themap.MapArr[y][x] == 1:
+        if themap.map_arr[y][x] == 1:
             line += "."
-        if themap.MapArr[y][x] == 2:
+        if themap.map_arr[y][x] == 2:
             line += "#"
+        if themap.map_arr[y][x] == 7:
+            line += "P"
     print(line)
